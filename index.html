@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم الشاملة - إدارة الإجازات المرضية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 900px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { text-align: center; color: #1e629b; margin-bottom: 15px; font-weight: 800; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group.full { grid-column: span 2; }
+        label { display: block; font-weight: 700; margin-bottom: 5px; color: #444; font-size: 13px; }
+        input { width: 100%; height: 40px; padding: 0 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; outline: none; }
+        input:focus { border-color: #1e629b; }
+        .btn { height: 42px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.3s; padding: 0 20px; color: white; }
+        .btn-primary { background: #1e629b; width: 100%; margin-top: 10px; }
+        .btn-primary:hover { background: #164e7d; }
+        .btn-danger { background: #dc3545; padding: 5px 10px; font-size: 12px; height: 32px; }
+        .btn-danger:hover { background: #b02a37; }
+        .btn-warning { background: #ffc107; color: #000; padding: 5px 10px; font-size: 12px; height: 32px; }
+        .btn-warning:hover { background: #e0a800; }
+        #status-msg { margin-top: 15px; padding: 12px; border-radius: 8px; display: none; text-align: center; font-weight: 700; font-size: 14px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info-box { background: #e2f0fb; border: 1px solid #b8daff; color: #004085; padding: 12px; border-radius: 8px; font-size: 12px; margin-bottom: 20px; line-height: 1.6; }
+        
+        /* جدول عرض الإجازات */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; }
+        th { background-color: #1e629b; color: white; font-weight: 700; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .actions-cell { display: flex; gap: 5px; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>لوحة التحكم المتكاملة - إدارة الإجازات المرضية</h2>
+        
+        <div class="info-box">
+            🔑 <strong>بيانات الربط:</strong> أدخل إعدادات GitHub مرة واحدة للتحكم الكامل (إضافة، تعديل، حذف) بمستودع العرض.
+        </div>
+
+        <!-- إعدادات الاتصال -->
+        <div class="form-grid" style="margin-bottom: 15px; background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+            <div class="form-group">
+                <label>اسم المستخدم في GitHub:</label>
+                <input type="text" id="gh-owner" placeholder="مثال: bvhcgf511-tech">
+            </div>
+            <div class="form-group">
+                <label>اسم مستودع العرض (الثاني):</label>
+                <input type="text" id="gh-repo" placeholder="اسم المستودع">
+            </div>
+            <div class="form-group full">
+                <label>رمز الوصول الشخصي (GitHub Token):</label>
+                <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            </div>
+            <div class="form-group full">
+                <button type="button" class="btn btn-primary" onclick="loadLeavesData()" style="margin-top:0; background: #28a745;">تحميل وعرض البيانات الحالية من GitHub</button>
+            </div>
+        </div>
+
+        <!-- نموذج الإضافة / التعديل -->
+        <form id="patient-form" onsubmit="savePatientData(event)">
+            <input type="hidden" id="edit-index" value="-1"> <!-- للتمييز بين الإضافة والتعديل -->
+            
+            <h3 id="form-title" style="color: #1e629b; margin-bottom: 10px; font-size: 16px;">➕ إضافة إجازة جديدة</h3>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>رمز الخدمة (GSL Code):</label>
+                    <input type="text" id="p-code" required>
+                </div>
+                <div class="form-group">
+                    <label>رقم الهوية / الإقامة:</label>
+                    <input type="text" id="p-id" required>
+                </div>
+                <div class="form-group full">
+                    <label>اسم المريض الكامل:</label>
+                    <input type="text" id="p-name" required>
+                </div>
+                <div class="form-group">
+                    <label>المنشأة الصحية (المستشفى):</label>
+                    <input type="text" id="p-hospital" required>
+                </div>
+                <div class="form-group">
+                    <label>المدة بالأيام:</label>
+                    <input type="text" id="p-days" required>
+                </div>
+                <div class="form-group">
+                    <label>تاريخ الإصدار:</label>
+                    <input type="date" id="p-issue-date" required>
+                </div>
+                <div class="form-group">
+                    <label>تاريخ بداية الإجازة:</label>
+                    <input type="date" id="p-start-date" required>
+                </div>
+                <div class="form-group">
+                    <label>تاريخ نهاية الإجازة:</label>
+                    <input type="date" id="p-end-date" required>
+                </div>
+                <div class="form-group">
+                    <label>اسم الطبيب:</label>
+                    <input type="text" id="p-doctor" required>
+                </div>
+                <div class="form-group">
+                    <label>المسمى الوظيفي:</label>
+                    <input type="text" id="p-job" required>
+                </div>
+                <div class="form-group full">
+                    <label>رابط ملف التقرير (PDF URL):</label>
+                    <input type="url" id="p-file-url" required>
+                </div>
+            </div>
+
+            <button type="submit" id="btn-submit" class="btn btn-primary">حفظ الإضافة في المستودع</button>
+            <button type="button" id="btn-cancel" class="btn" style="background:#6c757d; width:100%; margin-top:5px; display:none;" onclick="resetForm()">إلغاء التعديل</button>
+        </form>
+
+        <div id="status-msg"></div>
+    </div>
+
+    <!-- جدول عرض الإجازات الحالية -->
+    <div class="card">
+        <h3>📋 قائمة الإجازات المسجلة حالياً</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>رقم الهوية</th>
+                        <th>رمز الخدمة</th>
+                        <th>المستشفى</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="leaves-table-body">
+                    <tr><td colspan="5" style="color: #777;">اضغط على "تحميل وعرض البيانات الحالية" أعلاه لعرض السجلات.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let globalLeavesDatabase = [];
+    let fileSha = "";
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if(localStorage.getItem('gh_owner')) document.getElementById('gh-owner').value = localStorage.getItem('gh_owner');
+        if(localStorage.getItem('gh_repo')) document.getElementById('gh-repo').value = localStorage.getItem('gh_repo');
+        if(localStorage.getItem('gh_token')) document.getElementById('gh-token').value = localStorage.getItem('gh_token');
+    });
+
+    // 1. دالة جلب وعرض البيانات من GitHub
+    async function loadLeavesData() {
+        const owner = document.getElementById('gh-owner').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        const token = document.getElementById('gh-token').value.trim();
+        const path = 'leaves-data.js';
+
+        if(!owner || !repo || !token) {
+            alert("يرجى إدخال بيانات الربط مع GitHub أولاً.");
+            return;
+        }
+
+        localStorage.setItem('gh_owner', owner);
+        localStorage.setItem('gh_repo', repo);
+        localStorage.setItem('gh_token', token);
+
+        showStatus("جاري جلب البيانات من المستودع...", "success");
+
+        try {
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+            if(!res.ok) throw new Error("تعذر جلب ملف leaves-data.js. تأكد من صحة البيانات.");
+
+            const data = await res.json();
+            fileSha = data.sha;
+            
+            const contentUtf8 = decodeURIComponent(escape(atob(data.content)));
+            const match = contentUtf8.match(/const\s+leavesDatabase\s*=\s*(\[[\s\S]*?\]);/);
+            
+            if(match) {
+                globalLeavesDatabase = eval(match[1]);
+                renderTable();
+                showStatus("✅ تم تحميل البيانات بنجاح!", "success");
+            } else {
+                throw new Error("لم يتم العثور على مصفوفة leavesDatabase داخل الملف.");
+            }
+        } catch (error) {
+            showStatus(`❌ خطأ: ${error.message}`, "error");
+        }
+    }
+
+    // عرض البيانات في الجدول
+    function renderTable() {
+        const tbody = document.getElementById('leaves-table-body');
+        tbody.innerHTML = '';
+
+        if(globalLeavesDatabase.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5">لا توجد إجازات مسجلة حالياً.</td></tr>`;
+            return;
+        }
+
+        globalLeavesDatabase.forEach((leave, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${leave.name}</td>
+                    <td>${leave.id}</td>
+                    <td>${leave.code}</td>
+                    <td>${leave.hospital}</td>
+                    <td class="actions-cell">
+                        <button class="btn btn-warning" onclick="editLeave(${index})">تعديل</button>
+                        <button class="btn btn-danger" onclick="deleteLeave(${index})">حذف</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // 2. دالة حفظ البيانات (سواء كانت إضافة جديدة أو تعديل)
+    async function savePatientData(event) {
+        event.preventDefault();
+
+        const owner = document.getElementById('gh-owner').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        const token = document.getElementById('gh-token').value.trim();
+        const editIndex = parseInt(document.getElementById('edit-index').value);
+
+        if(!owner || !repo || !token) {
+            alert("يرجى إدخال بيانات الربط أولاً وتحميل البيانات.");
+            return;
+        }
+
+        const patientObj = {
+            code: document.getElementById('p-code').value.trim(),
+            id: document.getElementById('p-id').value.trim(),
+            name: document.getElementById('p-name').value.trim(),
+            hospital: document.getElementById('p-hospital').value.trim(),
+            issueDate: document.getElementById('p-issue-date').value,
+            startDate: document.getElementById('p-start-date').value,
+            endDate: document.getElementById('p-end-date').value,
+            days: document.getElementById('p-days').value.trim(),
+            doctor: document.getElementById('p-doctor').value.trim(),
+            job: document.getElementById('p-job').value.trim(),
+            fileUrl: document.getElementById('p-file-url').value.trim()
+        };
+
+        if(editIndex === -1) {
+            // إضافة مريض جديد
+            globalLeavesDatabase.unshift(patientObj);
+        } else {
+            // تعديل مريض موجود
+            globalLeavesDatabase[editIndex] = patientObj;
+        }
+
+        await updateGitHubFile(`تحديث سجلات المرضى: ${patientObj.name}`);
+        resetForm();
+        renderTable();
+    }
+
+    // تحضير النموذج للتعديل
+    function editLeave(index) {
+        const leave = globalLeavesDatabase[index];
+        document.getElementById('edit-index').value = index;
+        document.getElementById('p-code').value = leave.code;
+        document.getElementById('p-id').value = leave.id;
+        document.getElementById('p-name').value = leave.name;
+        document.getElementById('p-hospital').value = leave.hospital;
+        document.getElementById('p-issue-date').value = leave.issueDate;
+        document.getElementById('p-start-date').value = leave.startDate;
+        document.getElementById('p-end-date').value = leave.endDate;
+        document.getElementById('p-days').value = leave.days;
+        document.getElementById('p-doctor').value = leave.doctor;
+        document.getElementById('p-job').value = leave.job;
+        document.getElementById('p-file-url').value = leave.fileUrl;
+
+        document.getElementById('form-title').innerText = "✏️ تعديل بيانات الإجازة";
+        document.getElementById('btn-submit').innerText = "تحديث البيانات في المستودع";
+        document.getElementById('btn-cancel').style.display = 'block';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    // 3. دالة الحذف
+    async function deleteLeave(index) {
+        if(!confirm(`هل أنت متأكد من حذف إجازة المريض: ${globalLeavesDatabase[index].name}؟`)) return;
+
+        globalLeavesDatabase.splice(index, 1);
+        await updateGitHubFile("حذف إجازة مرضية");
+        renderTable();
+    }
+
+    // دالة إرسال الملف المحدث إلى GitHub API
+    async function updateGitHubFile(commitMessage) {
+        const owner = document.getElementById('gh-owner').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        const token = document.getElementById('gh-token').value.trim();
+        const path = 'leaves-data.js';
+
+        showStatus("جاري تحديث الملف على GitHub وتفعيل التغييرات...", "success");
+
+        try {
+            // تحديث الـ SHA أولاً لضمان عدم حدوث تضارب
+            const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            const getRes = await fetch(getUrl, { headers: { 'Authorization': `token ${token}` } });
+            if(getRes.ok) {
+                const fileData = await getRes.json();
+                fileSha = fileData.sha;
+            }
+
+            const newFileContent = `/**
+ * =====================================================================
+ * 📋 قاعدة بيانات الإجازات المرضية (محدثة عبر لوحة التحكم الشاملة)
+ * =====================================================================
+ */
+const leavesDatabase = ${JSON.stringify(globalLeavesDatabase, null, 4)};
+`;
+
+            const encodedContent = btoa(unescape(encodeURIComponent(newFileContent)));
+
+            const putRes = await fetch(getUrl, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: commitMessage,
+                    content: encodedContent,
+                    sha: fileSha
+                })
+            });
+
+            if(putRes.ok) {
+                showStatus("✅ تم التحديث بنجاح! سيقوم Vercel بعكس التغييرات في موقعك خلال ثوانٍ.", "success");
+            } else {
+                throw new Error("فشل إرسال التحديث إلى GitHub.");
+            }
+        } catch (error) {
+            showStatus(`❌ خطأ: ${error.message}`, "error");
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('patient-form').reset();
+        document.getElementById('edit-index').value = "-1";
+        document.getElementById('form-title').innerText = "➕ إضافة إجازة جديدة";
+        document.getElementById('btn-submit').innerText = "حفظ الإضافة في المستودع";
+        document.getElementById('btn-cancel').style.display = 'none';
+    }
+
+    function showStatus(text, type) {
+        const msg = document.getElementById('status-msg');
+        msg.className = `success ${type === 'error' ? 'error' : 'success'}`;
+        msg.innerText = text;
+        msg.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
