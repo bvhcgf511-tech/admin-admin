@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم الشاملة - إدارة الإجازات المرضية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>لوحة التحكم الشاملة - إدارة وطباعة الإجازات المرضية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@500;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
         body { background-color: #f4f6f9; color: #333; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -17,156 +17,308 @@
         label { display: block; font-weight: 700; margin-bottom: 5px; color: #444; font-size: 13px; }
         input { width: 100%; height: 40px; padding: 0 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; outline: none; }
         input:focus { border-color: #1e629b; }
-        .btn { height: 42px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.3s; padding: 0 20px; color: white; }
-        .btn-primary { background: #1e629b; width: 100%; margin-top: 10px; }
+        .btn { height: 42px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.3s; padding: 0 20px; color: white; width: 100%; margin-top: 10px; }
+        .btn-primary { background: #1e629b; }
         .btn-primary:hover { background: #164e7d; }
-        .btn-danger { background: #dc3545; padding: 5px 10px; font-size: 12px; height: 32px; }
-        .btn-danger:hover { background: #b02a37; }
-        .btn-warning { background: #ffc107; color: #000; padding: 5px 10px; font-size: 12px; height: 32px; }
-        .btn-warning:hover { background: #e0a800; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
         #status-msg { margin-top: 15px; padding: 12px; border-radius: 8px; display: none; text-align: center; font-weight: 700; font-size: 14px; }
         .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .info-box { background: #e2f0fb; border: 1px solid #b8daff; color: #004085; padding: 12px; border-radius: 8px; font-size: 12px; margin-bottom: 20px; line-height: 1.6; }
-        
-        /* جدول عرض الإجازات */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; }
-        th { background-color: #1e629b; color: white; font-weight: 700; }
-        tr:nth-child(even) { background-color: #f8f9fa; }
-        .actions-cell { display: flex; gap: 5px; justify-content: center; }
+
+        /* تنسيقات عرض التقرير الطبي PDF */
+        #report-section { display: none; }
+        .page { width: 210mm; height: 297mm; margin: 0 auto; padding: 8mm 9mm; background: #fff; position: relative; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+        .top { height: 32mm; display: grid; grid-template-columns: 1fr 1.3fr 1fr; align-items: center; direction: ltr; margin-bottom: 2mm; }
+        .logo-box-seha { width: 50mm; height: 50mm; margin-top: -16mm; margin-left: -6mm; display: flex; align-items: center; justify-content: flex-start; background: #ffffff; }
+        .logo-box-seha img, .saudi-logo-img, .logo-box-retina img, .ministry-box img, .center-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; filter: contrast(1.1); }
+        .top-center { text-align: center; direction: ltr; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 30mm; }
+        .saudi-logo-img { width: 60mm; height: 60mm; margin-top: -4mm; }
+        .top-right { display: flex; justify-content: flex-end; }
+        .logo-box-retina { width: 60mm; height: 50mm; margin-top: -13mm; margin-left: -6mm; display: flex; align-items: center; justify-content: flex-end; background: #ffffff; }
+        .heading { text-align: center; margin-top: 1mm; height: 18mm; color: #3274bd; }
+        .heading h1 { font-family: "Tajawal", sans-serif; font-size: 23px; margin: 0; font-weight: 800; }
+        .heading h2 { font-family: "Georgia", serif; font-size: 17px; margin: 3px 0 0; color: #293e79; font-weight: bold; }
+        .table-container { width: 100%; margin-top: 1mm; }
+        .report-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; direction: ltr; border: 1px solid #dedede; border-radius: 5px; overflow: hidden; }
+        .report-table td { border: 0.5px solid #d7d7d7; height: 10mm; padding: 3px 5px; text-align: center; vertical-align: middle; font-size: 11px; color: #293e79; background: #fff; white-space: nowrap; font-family: "Cairo", sans-serif; }
+        .report-table td.en-label { font-weight: bold; color: #3175c4; }
+        .report-table td.ar-label { direction: rtl; font-weight: bold; color: #3175c4; }
+        .report-table td.en-value { direction: ltr; }
+        .report-table td.ar-value { direction: rtl; }
+        .report-table tr:nth-child(even) td { background: #f5f5f5; }
+        .duration td { background: #30457e !important; color: white !important; font-weight: bold; }
+        .duration .ar-label, .duration .en-label { color: white !important; }
+        .footer { display: grid; grid-template-columns: 1fr 1fr; direction: ltr; height: 51mm; margin-top: 4mm; }
+        .footer-left { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center; padding: 0 5mm 0; color: #000; font-size: 11px; line-height: 1.8; font-weight: bold; }
+        .footer-left .english-note { font-size: 10px; }
+        .footer-left a { color: blue; text-decoration: underline; }
+        .footer-right { border-left: 1px solid #ddd; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; padding-top: 3mm; }
+        .ministry-box { width: 60mm; height: 40mm; display: flex; align-items: center; justify-content: center; margin-bottom: 2mm; }
+        .hospital-ar { font-size: 12px; font-weight: bold; direction: rtl; }
+        .hospital-en { font-size: 11px; font-weight: bold; direction: ltr; margin-top: 3px; }
+        .bottom-info { position: absolute; left: 9mm; right: 9mm; bottom: 46mm; height: 17mm; direction: ltr; display: flex; justify-content: space-between; align-items: center; }
+        .date-info { color: #111; font-size: 11px; font-weight: bold; line-height: 2.5; direction: ltr; }
+        .center-logo-box { width: 38mm; height: 20mm; display: flex; align-items: center; justify-content: center; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container > *:not(#report-section) { display: none !important; }
+            #report-section { display: block !important; }
+            .page { box-shadow: none; margin: 0; width: 210mm; height: 297mm; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="card">
-        <h2>لوحة التحكم المتكاملة - إدارة الإجازات المرضية</h2>
+    <!-- 1. واجهة الإدخال والتحكم (تظهر أولاً) -->
+    <div class="card" id="control-panel">
+        <h2>لوحة التحكم المتكاملة - إدخال إجازة مرضية</h2>
         
         <div class="info-box">
-            🔑 <strong>بيانات الربط:</strong> أدخل إعدادات GitHub مرة واحدة للتحكم الكامل (إضافة، تعديل، حذف) بمستودع العرض.
+            🔑 <strong>بيانات الربط:</strong> أدخل إعدادات GitHub لحفظ السجل المحدد وربطه بالموقع تلقائياً.
         </div>
 
-        <!-- إعدادات الاتصال -->
         <div class="form-grid" style="margin-bottom: 15px; background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
             <div class="form-group">
                 <label>اسم المستخدم في GitHub:</label>
                 <input type="text" id="gh-owner" placeholder="مثال: bvhcgf511-tech">
             </div>
             <div class="form-group">
-                <label>اسم مستودع العرض (الثاني):</label>
+                <label>اسم مستودع العرض:</label>
                 <input type="text" id="gh-repo" placeholder="اسم المستودع">
             </div>
             <div class="form-group full">
                 <label>رمز الوصول الشخصي (GitHub Token):</label>
                 <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
             </div>
-            <div class="form-group full">
-                <button type="button" class="btn btn-primary" onclick="loadLeavesData()" style="margin-top:0; background: #28a745;">تحميل وعرض البيانات الحالية من GitHub</button>
-            </div>
         </div>
 
-        <!-- نموذج الإضافة / التعديل -->
-        <form id="patient-form" onsubmit="savePatientData(event)">
-            <input type="hidden" id="edit-index" value="-1"> <!-- للتمييز بين الإضافة والتعديل -->
-            
-            <h3 id="form-title" style="color: #1e629b; margin-bottom: 10px; font-size: 16px;">➕ إضافة إجازة جديدة</h3>
+        <form id="patient-form" onsubmit="generateAndSaveReport(event)">
+            <h3 style="color: #1e629b; margin-bottom: 10px; font-size: 15px;">📋 بيانات التقرير الطبي الكاملة</h3>
             
             <div class="form-grid">
                 <div class="form-group">
-                    <label>رمز الخدمة (GSL Code):</label>
-                    <input type="text" id="p-code" required>
+                    <label>رمز الإجازة (Leave ID):</label>
+                    <input type="text" id="p-code" value="GSL999999999" required>
                 </div>
                 <div class="form-group">
                     <label>رقم الهوية / الإقامة:</label>
-                    <input type="text" id="p-id" required>
-                </div>
-                <div class="form-group full">
-                    <label>اسم المريض الكامل:</label>
-                    <input type="text" id="p-name" required>
+                    <input type="text" id="p-id" value="11223344" required>
                 </div>
                 <div class="form-group">
-                    <label>المنشأة الصحية (المستشفى):</label>
-                    <input type="text" id="p-hospital" required>
+                    <label>اسم المريض (عربي):</label>
+                    <input type="text" id="p-name-ar" value="طلحه عبدالله هزاع" required>
                 </div>
                 <div class="form-group">
-                    <label>المدة بالأيام:</label>
-                    <input type="text" id="p-days" required>
+                    <label>اسم المريض (إنجليزي - Name):</label>
+                    <input type="text" id="p-name-en" value="Talha Abdula Hazaa" required>
+                </div>
+                <div class="form-group">
+                    <label>اسم المستشفى (عربي):</label>
+                    <input type="text" id="p-hospital-ar" value="مستشفى الأمير متعب بن عبد العزيز" required>
+                </div>
+                <div class="form-group">
+                    <label>اسم المستشفى (إنجليزي - Hospital):</label>
+                    <input type="text" id="p-hospital-en" value="Prince Mutab bin Abdulaziz Hospital" required>
+                </div>
+                <div class="form-group">
+                    <label>الجنسية (عربي):</label>
+                    <input type="text" id="p-country-ar" value="السعودية" required>
+                </div>
+                <div class="form-group">
+                    <label>الجنسية (إنجليزي - Nationality):</label>
+                    <input type="text" id="p-country-en" value="Saudi Arabia" required>
+                </div>
+                <div class="form-group">
+                    <label>جهة العمل (عربي):</label>
+                    <input type="text" id="p-emp-ar" value="المعهد الصناعي الثانوي" required>
+                </div>
+                <div class="form-group">
+                    <label>جهة العمل (إنجليزي - Employer):</label>
+                    <input type="text" id="p-emp-en" value="Industrial Institute" required>
+                </div>
+                <div class="form-group">
+                    <label>مدة الإجازة بالأيام:</label>
+                    <input type="text" id="p-days" value="3" required>
                 </div>
                 <div class="form-group">
                     <label>تاريخ الإصدار:</label>
-                    <input type="date" id="p-issue-date" required>
+                    <input type="date" id="p-issue-date" value="2026-11-08" required>
                 </div>
                 <div class="form-group">
-                    <label>تاريخ بداية الإجازة:</label>
-                    <input type="date" id="p-start-date" required>
+                    <label>تاريخ بداية الإجازة (الدخول):</label>
+                    <input type="date" id="p-start-date" value="2026-11-08" required>
                 </div>
                 <div class="form-group">
-                    <label>تاريخ نهاية الإجازة:</label>
-                    <input type="date" id="p-end-date" required>
+                    <label>تاريخ نهاية الإجازة (الخروج):</label>
+                    <input type="date" id="p-end-date" value="2026-11-10" required>
                 </div>
                 <div class="form-group">
-                    <label>اسم الطبيب:</label>
-                    <input type="text" id="p-doctor" required>
+                    <label>اسم الطبيب (عربي):</label>
+                    <input type="text" id="p-doc-ar" value="ايمن احمد حمود" required>
                 </div>
                 <div class="form-group">
-                    <label>المسمى الوظيفي:</label>
-                    <input type="text" id="p-job" required>
+                    <label>اسم الطبيب (إنجليزي - Practitioner):</label>
+                    <input type="text" id="p-doc-en" value="Aiman Ahmad Hamod" required>
+                </div>
+                <div class="form-group">
+                    <label>المسمى الوظيفي (عربي):</label>
+                    <input type="text" id="p-job-ar" value="طبيب عام" required>
+                </div>
+                <div class="form-group">
+                    <label>المسمى الوظيفي (إنجليزي - Position):</label>
+                    <input type="text" id="p-job-en" value="General Practitioner" required>
                 </div>
                 <div class="form-group full">
-                    <label>رابط ملف التقرير (PDF URL):</label>
-                    <input type="url" id="p-file-url" required>
+                    <label>رابط التحقق للموقع (URL):</label>
+                    <input type="url" id="p-file-url" value="https://seha-app-2m7j.vercel.app" required>
                 </div>
             </div>
 
-            <button type="submit" id="btn-submit" class="btn btn-primary">حفظ الإضافة في المستودع</button>
-            <button type="button" id="btn-cancel" class="btn" style="background:#6c757d; width:100%; margin-top:5px; display:none;" onclick="resetForm()">إلغاء التعديل</button>
+            <button type="submit" class="btn btn-success">حفظ وإرسال إلى GitHub وعرض التقرير</button>
         </form>
 
         <div id="status-msg"></div>
     </div>
 
-    <!-- جدول عرض الإجازات الحالية -->
-    <div class="card">
-        <h3>📋 قائمة الإجازات المسجلة حالياً</h3>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>الاسم</th>
-                        <th>رقم الهوية</th>
-                        <th>رمز الخدمة</th>
-                        <th>المستشفى</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="leaves-table-body">
-                    <tr><td colspan="5" style="color: #777;">اضغط على "تحميل وعرض البيانات الحالية" أعلاه لعرض السجلات.</td></tr>
-                </tbody>
-            </table>
+    <!-- 2. قسم عرض التقرير الطبي PDF (يظهر بعد الحفظ والإدخال) -->
+    <div id="report-section">
+        <div style="margin-bottom: 15px; text-align: center;">
+            <button class="btn btn-primary" style="width: auto; display: inline-block; padding: 10px 25px;" onclick="window.print()">🖨️ طباعة التقرير / حفظ PDF</button>
+            <button class="btn" style="width: auto; display: inline-block; background: #6c757d; padding: 10px 25px; margin-right: 10px;" onclick="backToForm()">🔙 تعديل البيانات</button>
+        </div>
+
+        <div class="page">
+            <div class="top">
+                <div class="logo-box-seha"><img src="https://i.ibb.co/R4k3vYLw/Seha.png" alt="شعار صحة"></div>
+                <div class="top-center"><img src="https://i.ibb.co/5gDLwXnr/Screenshot-3.jpg" alt="شعار المملكة" class="saudi-logo-img"></div>
+                <div class="top-right"><div class="logo-box-retina"><img src="https://i.ibb.co/DPXK425y/Screenshot-3.jpg" alt="شعار الشبكية"></div></div>
+            </div>
+
+            <div class="heading">
+                <h1>تقرير إجازة مرضية</h1>
+                <h2>Sick Leave Report</h2>
+            </div>
+
+            <div class="table-container">
+                <table class="report-table">
+                    <colgroup>
+                        <col style="width: 21%;">
+                        <col style="width: 31%;">
+                        <col style="width: 31%;">
+                        <col style="width: 17%;">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <td class="en-label">Leave ID</td>
+                            <td class="en-value" colspan="2" id="val-id">GSL999999999</td>
+                            <td class="ar-label">رمز الإجازة</td>
+                        </tr>
+                        <tr class="duration">
+                            <td class="en-label">Leave Duration</td>
+                            <td class="en-value" id="val-dur-en">3 day</td>
+                            <td class="ar-value" id="val-dur-ar">3 يوم</td>
+                            <td class="ar-label">مدة الإجازة</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">Admission Date</td>
+                            <td class="en-value" id="val-adm">08-11-2026</td>
+                            <td class="ar-value" id="val-adm-ar">08-11-2026</td>
+                            <td class="ar-label">تاريخ الدخول</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">Discharge Date</td>
+                            <td class="en-value" id="val-dis">10-11-2026</td>
+                            <td class="ar-value" id="val-dis-ar">10-11-2026</td>
+                            <td class="ar-label">تاريخ الخروج</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">Issue Date</td>
+                            <td colspan="2" id="val-issue">08-11-2026</td>
+                            <td class="ar-label">تاريخ إصدار التقرير</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">Name</td>
+                            <td class="en-value" id="val-name-en">Talha Abdula Hazaa</td>
+                            <td class="ar-value" id="val-name-ar">طلحه عبدالله هزاع</td>
+                            <td class="ar-label">الاسم</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">National ID / Iqama</td>
+                            <td colspan="2" id="val-natid">11223344</td>
+                            <td class="ar-label">رقم الهوية / الإقامة</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">Nationality</td>
+                            <td class="en-value" id="val-country-en">Saudi Arabia</td>
+                            <td class="ar-value" id="val-country-ar">السعودية</td>
+                            <td class="ar-label">الجنسية</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">Employer</td>
+                            <td class="en-value" id="val-emp-en">Industrial Institute</td>
+                            <td class="ar-value" id="val-emp-ar">المعهد الصناعي الثانوي</td>
+                            <td class="ar-label">جهة العمل</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">Practitioner Name</td>
+                            <td class="en-value" id="val-doc-en">Aiman Ahmad Hamod</td>
+                            <td class="ar-value" id="val-doc-ar">ايمن احمد حمود</td>
+                            <td class="ar-label">اسم الممارس</td>
+                        </tr>
+                        <tr>
+                            <td class="en-label">Position</td>
+                            <td class="en-value" id="val-pos-en">General Practitioner</td>
+                            <td class="ar-value" id="val-pos-ar">طبيب عام</td>
+                            <td class="ar-label">المسمى الوظيفي</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="footer">
+                <div class="footer-left">
+                    <div>للتحقق من بيانات التقرير يرجى التأكد من زيارة موقع منصة صحة الرسمي</div>
+                    <div class="english-note">To check the report please visit Seha's official website</div>
+                    <a href="#" id="verify-link" target="_blank">https://seha-app-2m7j.vercel.app</a>
+                </div>
+                <div class="footer-right">
+                    <div class="ministry-box"><img src="https://i.ibb.co/zHCPKZxt/Screenshot.png" alt="شعار وزارة الصحة"></div>
+                    <div class="hospital-ar" id="hosp-ar">مستشفى الأمير متعب بن عبد العزيز</div>
+                    <div class="hospital-en" id="hosp-en">Prince Mutab bin Abdulaziz Hospital</div>
+                </div>
+            </div>
+
+            <div class="bottom-info">
+                <div class="date-info">
+                    <div id="reportTime">1:39 PM</div>
+                    <div id="reportDate">Sunday, 12 April 2026</div>
+                </div>
+                <div class="center-logo-box"><img src="https://i.ibb.co/Mx66wwM8/dfh-Zfy-JM-400x400-2.jpg" alt="شعار المركز الوطني"></div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    let globalLeavesDatabase = [];
-    let fileSha = "";
-
     document.addEventListener('DOMContentLoaded', () => {
         if(localStorage.getItem('gh_owner')) document.getElementById('gh-owner').value = localStorage.getItem('gh_owner');
         if(localStorage.getItem('gh_repo')) document.getElementById('gh-repo').value = localStorage.getItem('gh_repo');
         if(localStorage.getItem('gh_token')) document.getElementById('gh-token').value = localStorage.getItem('gh_token');
     });
 
-    // 1. دالة جلب وعرض البيانات من GitHub
-    async function loadLeavesData() {
+    async function generateAndSaveReport(event) {
+        event.preventDefault();
+
         const owner = document.getElementById('gh-owner').value.trim();
         const repo = document.getElementById('gh-repo').value.trim();
         const token = document.getElementById('gh-token').value.trim();
-        const path = 'leaves-data.js';
 
         if(!owner || !repo || !token) {
-            alert("يرجى إدخال بيانات الربط مع GitHub أولاً.");
+            alert("يرجى إدخال بيانات ربط GitHub بشكل صحيح.");
             return;
         }
 
@@ -174,155 +326,45 @@
         localStorage.setItem('gh_repo', repo);
         localStorage.setItem('gh_token', token);
 
-        showStatus("جاري جلب البيانات من المستودع...", "success");
-
-        try {
-            const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-            const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
-            if(!res.ok) throw new Error("تعذر جلب ملف leaves-data.js. تأكد من صحة البيانات.");
-
-            const data = await res.json();
-            fileSha = data.sha;
-            
-            const contentUtf8 = decodeURIComponent(escape(atob(data.content)));
-            const match = contentUtf8.match(/const\s+leavesDatabase\s*=\s*(\[[\s\S]*?\]);/);
-            
-            if(match) {
-                globalLeavesDatabase = eval(match[1]);
-                renderTable();
-                showStatus("✅ تم تحميل البيانات بنجاح!", "success");
-            } else {
-                throw new Error("لم يتم العثور على مصفوفة leavesDatabase داخل الملف.");
-            }
-        } catch (error) {
-            showStatus(`❌ خطأ: ${error.message}`, "error");
-        }
-    }
-
-    // عرض البيانات في الجدول
-    function renderTable() {
-        const tbody = document.getElementById('leaves-table-body');
-        tbody.innerHTML = '';
-
-        if(globalLeavesDatabase.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5">لا توجد إجازات مسجلة حالياً.</td></tr>`;
-            return;
-        }
-
-        globalLeavesDatabase.forEach((leave, index) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${leave.name}</td>
-                    <td>${leave.id}</td>
-                    <td>${leave.code}</td>
-                    <td>${leave.hospital}</td>
-                    <td class="actions-cell">
-                        <button class="btn btn-warning" onclick="editLeave(${index})">تعديل</button>
-                        <button class="btn btn-danger" onclick="deleteLeave(${index})">حذف</button>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-
-    // 2. دالة حفظ البيانات (سواء كانت إضافة جديدة أو تعديل)
-    async function savePatientData(event) {
-        event.preventDefault();
-
-        const owner = document.getElementById('gh-owner').value.trim();
-        const repo = document.getElementById('gh-repo').value.trim();
-        const token = document.getElementById('gh-token').value.trim();
-        const editIndex = parseInt(document.getElementById('edit-index').value);
-
-        if(!owner || !repo || !token) {
-            alert("يرجى إدخال بيانات الربط أولاً وتحميل البيانات.");
-            return;
-        }
-
-        const patientObj = {
+        // جمع البيانات المدخلة بالكامل
+        const patientData = {
             code: document.getElementById('p-code').value.trim(),
             id: document.getElementById('p-id').value.trim(),
-            name: document.getElementById('p-name').value.trim(),
-            hospital: document.getElementById('p-hospital').value.trim(),
+            name: document.getElementById('p-name-ar').value.trim(),
+            nameEn: document.getElementById('p-name-en').value.trim(),
+            hospital: document.getElementById('p-hospital-ar').value.trim(),
+            hospitalEn: document.getElementById('p-hospital-en').value.trim(),
+            nationality: document.getElementById('p-country-ar').value.trim(),
+            nationalityEn: document.getElementById('p-country-en').value.trim(),
+            employer: document.getElementById('p-emp-ar').value.trim(),
+            employerEn: document.getElementById('p-emp-en').value.trim(),
             issueDate: document.getElementById('p-issue-date').value,
             startDate: document.getElementById('p-start-date').value,
             endDate: document.getElementById('p-end-date').value,
             days: document.getElementById('p-days').value.trim(),
-            doctor: document.getElementById('p-doctor').value.trim(),
-            job: document.getElementById('p-job').value.trim(),
+            doctor: document.getElementById('p-doc-ar').value.trim(),
+            doctorEn: document.getElementById('p-doc-en').value.trim(),
+            job: document.getElementById('p-job-ar').value.trim(),
+            jobEn: document.getElementById('p-job-en').value.trim(),
             fileUrl: document.getElementById('p-file-url').value.trim()
         };
 
-        if(editIndex === -1) {
-            // إضافة مريض جديد
-            globalLeavesDatabase.unshift(patientObj);
-        } else {
-            // تعديل مريض موجود
-            globalLeavesDatabase[editIndex] = patientObj;
-        }
-
-        await updateGitHubFile(`تحديث سجلات المرضى: ${patientObj.name}`);
-        resetForm();
-        renderTable();
-    }
-
-    // تحضير النموذج للتعديل
-    function editLeave(index) {
-        const leave = globalLeavesDatabase[index];
-        document.getElementById('edit-index').value = index;
-        document.getElementById('p-code').value = leave.code;
-        document.getElementById('p-id').value = leave.id;
-        document.getElementById('p-name').value = leave.name;
-        document.getElementById('p-hospital').value = leave.hospital;
-        document.getElementById('p-issue-date').value = leave.issueDate;
-        document.getElementById('p-start-date').value = leave.startDate;
-        document.getElementById('p-end-date').value = leave.endDate;
-        document.getElementById('p-days').value = leave.days;
-        document.getElementById('p-doctor').value = leave.doctor;
-        document.getElementById('p-job').value = leave.job;
-        document.getElementById('p-file-url').value = leave.fileUrl;
-
-        document.getElementById('form-title').innerText = "✏️ تعديل بيانات الإجازة";
-        document.getElementById('btn-submit').innerText = "تحديث البيانات في المستودع";
-        document.getElementById('btn-cancel').style.display = 'block';
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    // 3. دالة الحذف
-    async function deleteLeave(index) {
-        if(!confirm(`هل أنت متأكد من حذف إجازة المريض: ${globalLeavesDatabase[index].name}؟`)) return;
-
-        globalLeavesDatabase.splice(index, 1);
-        await updateGitHubFile("حذف إجازة مرضية");
-        renderTable();
-    }
-
-    // دالة إرسال الملف المحدث إلى GitHub API
-    async function updateGitHubFile(commitMessage) {
-        const owner = document.getElementById('gh-owner').value.trim();
-        const repo = document.getElementById('gh-repo').value.trim();
-        const token = document.getElementById('gh-token').value.trim();
-        const path = 'leaves-data.js';
-
-        showStatus("جاري تحديث الملف على GitHub وتفعيل التغييرات...", "success");
+        showStatus("جاري إرسال البيانات المحددة وحفظها على GitHub...", "success");
 
         try {
-            // تحديث الـ SHA أولاً لضمان عدم حدوث تضارب
+            const path = 'leaves-data.js';
             const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            
+            let fileSha = "";
             const getRes = await fetch(getUrl, { headers: { 'Authorization': `token ${token}` } });
             if(getRes.ok) {
                 const fileData = await getRes.json();
                 fileSha = fileData.sha;
             }
 
-            const newFileContent = `/**
- * =====================================================================
- * 📋 قاعدة بيانات الإجازات المرضية (محدثة عبر لوحة التحكم الشاملة)
- * =====================================================================
- */
-const leavesDatabase = ${JSON.stringify(globalLeavesDatabase, null, 4)};
-`;
-
+            // إرسال البيانات المحددة فقط للموقع
+            const payloadData = [patientData];
+            const newFileContent = `const leavesDatabase = ${JSON.stringify(payloadData, null, 4)};`;
             const encodedContent = btoa(unescape(encodeURIComponent(newFileContent)));
 
             const putRes = await fetch(getUrl, {
@@ -332,28 +374,62 @@ const leavesDatabase = ${JSON.stringify(globalLeavesDatabase, null, 4)};
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    message: commitMessage,
+                    message: `تحديث تقرير الإجازة المرضية للمريض: ${patientData.name}`,
                     content: encodedContent,
                     sha: fileSha
                 })
             });
 
             if(putRes.ok) {
-                showStatus("✅ تم التحديث بنجاح! سيقوم Vercel بعكس التغييرات في موقعك خلال ثوانٍ.", "success");
+                // تعبئة بيانات التقرير المرئي بالكامل (عربي وإنجليزي)
+                document.getElementById("val-id").textContent = patientData.code;
+                document.getElementById("val-dur-ar").textContent = `${patientData.days} يوم (${patientData.startDate} إلى ${patientData.endDate})`;
+                document.getElementById("val-dur-en").textContent = `${patientData.days} day (${patientData.startDate} to ${patientData.endDate})`;
+                document.getElementById("val-adm").textContent = patientData.startDate;
+                document.getElementById("val-adm-ar").textContent = patientData.startDate;
+                document.getElementById("val-dis").textContent = patientData.endDate;
+                document.getElementById("val-dis-ar").textContent = patientData.endDate;
+                document.getElementById("val-issue").textContent = patientData.issueDate;
+                
+                document.getElementById("val-name-ar").textContent = patientData.name;
+                document.getElementById("val-name-en").textContent = patientData.nameEn;
+                document.getElementById("val-natid").textContent = patientData.id;
+                
+                document.getElementById("val-country-ar").textContent = patientData.nationality;
+                document.getElementById("val-country-en").textContent = patientData.nationalityEn;
+                
+                document.getElementById("val-emp-ar").textContent = patientData.employer;
+                document.getElementById("val-emp-en").textContent = patientData.employerEn;
+                
+                document.getElementById("hosp-ar").textContent = patientData.hospital;
+                document.getElementById("hosp-en").textContent = patientData.hospitalEn;
+                
+                document.getElementById("val-doc-ar").textContent = patientData.doctor;
+                document.getElementById("val-doc-en").textContent = patientData.doctorEn;
+                
+                document.getElementById("val-pos-ar").textContent = patientData.job;
+                document.getElementById("val-pos-en").textContent = patientData.jobEn;
+                
+                const linkEl = document.getElementById("verify-link");
+                linkEl.href = patientData.fileUrl;
+                linkEl.textContent = patientData.fileUrl;
+
+                updateDateTime();
+
+                // الانتقال لعرض التقرير
+                document.getElementById('control-panel').style.display = 'none';
+                document.getElementById('report-section').style.display = 'block';
             } else {
-                throw new Error("فشل إرسال التحديث إلى GitHub.");
+                throw new Error("فشل الحفظ والتحديث في مستودع GitHub.");
             }
         } catch (error) {
             showStatus(`❌ خطأ: ${error.message}`, "error");
         }
     }
 
-    function resetForm() {
-        document.getElementById('patient-form').reset();
-        document.getElementById('edit-index').value = "-1";
-        document.getElementById('form-title').innerText = "➕ إضافة إجازة جديدة";
-        document.getElementById('btn-submit').innerText = "حفظ الإضافة في المستودع";
-        document.getElementById('btn-cancel').style.display = 'none';
+    function backToForm() {
+        document.getElementById('report-section').style.display = 'none';
+        document.getElementById('control-panel').style.display = 'block';
     }
 
     function showStatus(text, type) {
@@ -361,6 +437,12 @@ const leavesDatabase = ${JSON.stringify(globalLeavesDatabase, null, 4)};
         msg.className = `success ${type === 'error' ? 'error' : 'success'}`;
         msg.innerText = text;
         msg.style.display = 'block';
+    }
+
+    function updateDateTime() {
+        const now = new Date();
+        document.getElementById("reportTime").textContent = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+        document.getElementById("reportDate").textContent = now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     }
 </script>
 
